@@ -157,7 +157,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div className="col-span-1 md:col-span-1">
               <div className="flex items-center gap-2 rounded-2xl border bg-white px-4 py-3">
                 <Search size={18} />
