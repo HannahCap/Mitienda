@@ -141,9 +141,6 @@ export default function App() {
               <a href={`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}`} target="_blank" className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white">
                 <MessageCircle size={18} /> WhatsApp
               </a>
-              <a href={OWNER.instagram} target="_blank" className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-pink-500 hover:bg-pink-600 text-white">
-                <Instagram size={18} /> Instagram
-              </a>
 
               {!isAuthed ? (
                 <button onClick={() => setLoginOpen(true)} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white">
