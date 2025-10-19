@@ -238,12 +238,37 @@ export default function App() {
                       transform: "scale(1.1)",
                     }}
                   />
-                  <img
-                    src={item.img}
-                    alt={item.name}
-                    className="relative z-10 h-full w-full object-contain"
-                    loading="lazy"
-                  />
+                 {/* Imagen cuadrada con blur + fallback */}
+<div className="relative w-full aspect-square overflow-hidden rounded-2xl">
+  {/* Capa de fondo difuminada que rellena el cuadrado */}
+  <div
+    className="absolute inset-0"
+    style={{
+      backgroundImage: `url(${item.img || ""})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      filter: "blur(12px)",
+      transform: "scale(1.1)"
+    }}
+  />
+  {/* Si falla la imagen real, mostramos un placeholder */}
+  <img
+    src={item.img}
+    alt={item.name}
+    className="relative z-10 h-full w-full object-contain"
+    loading="lazy"
+    onError={(e) => {
+      e.currentTarget.onerror = null;
+      e.currentTarget.src = "https://placehold.co/600x600?text=Sin+imagen";
+      const bg = e.currentTarget.previousSibling;
+      if (bg && bg.style) {
+        bg.style.backgroundImage = "none";
+        bg.style.filter = "none";
+        bg.style.backgroundColor = "#f3f4f6";
+      }
+    }}
+  />
+</div>
                 </div>
                 <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-white">{item.rarity}</div>
               </div>
