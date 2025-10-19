@@ -1,6 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, ShoppingBag, Plus, X, ChevronDown, Info, Instagram, MessageCircle } from "lucide-react";
+import {
+  Search, ShoppingBag, Plus, X, ChevronDown, Info, Instagram, MessageCircle,
+  LogIn, LogOut, Trash2, Save
+} from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const OWNER = {
   brand: "Paws & Trades",
@@ -11,13 +19,6 @@ const OWNER = {
   currency: "ARS",
 };
 
-const INITIAL_ITEMS = [
-  { id: "p1", name: "Shadow Dragon", rarity: "legendario", price: 350000, img: "https://placehold.co/600x400/png?text=Shadow+Dragon", stock: 1, tags: ["montable", "neón"] },
-  { id: "p2", name: "Frost Fury", rarity: "legendario", price: 210000, img: "https://placehold.co/600x400/png?text=Frost+Fury", stock: 3, tags: ["montable"] },
-  { id: "p3", name: "Albino Monkey", rarity: "ultra-raro", price: 90000, img: "https://placehold.co/600x400/png?text=Albino+Monkey", stock: 2, tags: ["fly", "ride"] },
-  { id: "p4", name: "Golden Penguin", rarity: "raro", price: 45000, img: "https://placehold.co/600x400/png?text=Golden+Penguin", stock: 5, tags: ["colección"] },
-];
-
 const RARITIES = [
   { value: "legendario", label: "Legendario" },
   { value: "ultra-raro", label: "Ultra-raro" },
@@ -26,41 +27,100 @@ const RARITIES = [
 ];
 
 function formatMoney(n, currency = OWNER.currency) {
-  try {
-    return new Intl.NumberFormat("es-AR", { style: "currency", currency }).format(n);
-  } catch {
-    return new Intl.NumberFormat("es-AR").format(n) + ` ${currency}`;
-  }
+  const num = Number(n ?? 0);
+  try { return new Intl.NumberFormat("es-AR", { style: "currency", currency }).format(num); }
+  catch { return new Intl.NumberFormat("es-AR").format(num) + ` ${currency}`; }
 }
 
 export default function App() {
-  const [items] = useState(INITIAL_ITEMS);
+  const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [rarity, setRarity] = useState("");
   const [sort, setSort] = useState("recent");
   const [sellOpen, setSellOpen] = useState(false);
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [session, setSession] = useState(null);
+  const isAuthed = Boolean(session);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!supabase) {
+        setItems([
+          { id: "p1", name: "Shadow Dragon", rarity: "legendario", price: 350000, img: "https://placehold.co/600x400/png?text=Shadow+Dragon", stock: 1, tags: "montable,neón" },
+          { id: "p2", name: "Frost Fury", rarity: "legendario", price: 210000, img: "https://placehold.co/600x400/png?text=Frost+Fury", stock: 3, tags: "montable" },
+          { id: "p3", name: "Albino Monkey", rarity: "ultra-raro", price: 90000, img: "https://placehold.co/600x400/png?text=Albino+Monkey", stock: 2, tags: "fly,ride" },
+          { id: "p4", name: "Golden Penguin", rarity: "raro", price: 45000, img: "https://placehold.co/600x400/png?text=Golden+Penguin", stock: 5, tags: "colección" },
+        ]);
+        return;
+      }
+      const { data } = await supabase.from("items").select("*").order("name");
+      setItems(data || []);
+    };
+    load();
+
+    if (supabase) {
+      supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+      const { data: sub } = supabase.auth.onAuthStateChange((_ev, sess) => setSession(sess));
+      return () => sub?.subscription.unsubscribe();
+    }
+  }, []);
 
   const filtered = useMemo(() => {
-    let list = items.filter(
-      (i) =>
-        i.name.toLowerCase().includes(q.toLowerCase()) ||
-        i.tags.some((t) => t.toLowerCase().includes(q.toLowerCase()))
-    );
+    let list = items.filter((i) => {
+      const hay = (s) => (s || "").toLowerCase();
+      return hay(i.name).includes(hay(q)) || hay(i.tags).includes(hay(q));
+    });
     if (rarity) list = list.filter((i) => i.rarity === rarity);
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
-    if (sort === "stock") list = [...list].sort((a, b) => b.stock - a.stock);
+    if (sort === "price-asc") list = [...list].sort((a, b) => Number(a.price) - Number(b.price));
+    if (sort === "price-desc") list = [...list].sort((a, b) => Number(b.price) - Number(a.price));
+    if (sort === "stock") list = [...list].sort((a, b) => Number(b.stock) - Number(a.stock));
     return list;
   }, [items, q, rarity, sort]);
 
   const contactWhatsApp = (item) => {
     const message = encodeURIComponent(
       `Hola! Me interesa *${item?.name || "vender/comprar/intercambiar"}* en ${OWNER.brand}.\n` +
-        (item ? `Vi que está a ${formatMoney(item.price)}. ¿Sigue disponible?` : "Quiero venderte o proponerte un intercambio.")
+      (item ? `Vi que está a ${formatMoney(item.price)}. ¿Sigue disponible?` : "Quiero venderte o proponerte un intercambio.")
     );
     return `https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}?text=${message}`;
   };
+
+  const addItem = async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    const payload = {
+      name: data.name,
+      rarity: data.rarity,
+      price: Number(data.price || 0),
+      img: data.img || "",
+      stock: Number(data.stock || 0),
+      tags: data.tags || "",
+    };
+    if (!supabase) return alert("Falta configurar Supabase (env vars en Vercel).");
+    const { data: inserted, error } = await supabase.from("items").insert(payload).select();
+    if (error) return alert("Error: " + error.message);
+    setItems((prev) => [inserted[0], ...prev]);
+    e.currentTarget.reset();
+  };
+
+  const deleteItem = async (id) => {
+    if (!confirm("¿Eliminar este pet?")) return;
+    if (!supabase) return alert("Falta configurar Supabase (env vars en Vercel).");
+    const { error } = await supabase.from("items").delete().eq("id", id);
+    if (error) return alert("Error: " + error.message);
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!supabase) return alert("Falta configurar Supabase (env vars en Vercel).");
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+    if (error) alert("Login falló: " + error.message);
+    else setLoginOpen(false);
+  };
+  const handleLogout = async () => { await supabase?.auth.signOut(); };
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900">
@@ -84,9 +144,16 @@ export default function App() {
               <a href={OWNER.instagram} target="_blank" className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-pink-500 hover:bg-pink-600 text-white">
                 <Instagram size={18} /> Instagram
               </a>
-              <button onClick={() => setSellOpen(true)} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white">
-                <Plus size={18} /> Vender mi pet
-              </button>
+
+              {!isAuthed ? (
+                <button onClick={() => setLoginOpen(true)} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white">
+                  <LogIn size={18} /> Iniciar sesión
+                </button>
+              ) : (
+                <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-200 hover:bg-neutral-300">
+                  <LogOut size={18} /> Salir
+                </button>
+              )}
             </div>
           </div>
 
@@ -101,9 +168,7 @@ export default function App() {
               <div className="relative">
                 <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="w-full appearance-none rounded-2xl border bg-white px-4 py-3 pr-9">
                   <option value="">Todas las rarezas</option>
-                  {RARITIES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
+                  {RARITIES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" size={18} />
               </div>
@@ -121,6 +186,27 @@ export default function App() {
         </div>
       </header>
 
+      {isAuthed && (
+        <section className="mx-auto max-w-6xl px-4 mt-6 rounded-3xl border bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-bold flex items-center gap-2"><Plus size={18}/> Agregar nuevo pet</h2>
+          <form className="mt-4 grid gap-3" onSubmit={addItem}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input name="name" required className="rounded-xl border px-3 py-2" placeholder="Nombre (ej. Shadow Dragon)" />
+              <select name="rarity" className="rounded-xl border px-3 py-2">
+                {RARITIES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+              <input name="price" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Precio (ARS)" />
+              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen" />
+              <input name="stock" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Stock" />
+              <input name="tags" className="rounded-xl border px-3 py-2 md:col-span-3" placeholder="Tags (neón,fly,ride)" />
+            </div>
+            <div className="flex justify-end">
+              <button className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800"><Save size={16}/> Guardar</button>
+            </div>
+          </form>
+        </section>
+      )}
+
       <main className="mx-auto max-w-6xl px-4 pb-20">
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
@@ -133,10 +219,20 @@ export default function App() {
                 <h3 className="text-lg font-semibold leading-tight">{item.name}</h3>
                 <div className="mt-1 text-sm text-neutral-500">Stock: {item.stock}</div>
                 <div className="mt-2 text-xl font-bold">{formatMoney(item.price)}</div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
+                  {(item.tags || "").split(",").filter(Boolean).map((t) => (
+                    <span key={t} className="rounded-full border px-2 py-1">#{t.trim()}</span>
+                  ))}
+                </div>
                 <div className="mt-4 grid grid-cols-1 gap-2">
                   <a href={contactWhatsApp(item)} target="_blank" className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white">
                     <MessageCircle size={16} /> Contactar por WhatsApp
                   </a>
+                  {isAuthed && (
+                    <button onClick={() => deleteItem(item.id)} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 border bg-white hover:bg-neutral-50 text-red-600">
+                      <Trash2 size={16}/> Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.article>
@@ -156,89 +252,46 @@ export default function App() {
         </section>
       </main>
 
-      {/* Modal Vender */}
+      <footer className="border-t bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="font-semibold">{OWNER.brand}</div>
+              <div className="text-sm text-neutral-500">{OWNER.tagline}</div>
+              <div className="mt-2 text-xs text-neutral-400">Fan-site no afiliado. Los nombres, marcas y assets pertenecen a sus respectivos dueños.</div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       <AnimatePresence>
-        {sellOpen && (
+        {loginOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Vender mi pet</h3>
-                <button onClick={() => setSellOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
+                <h3 className="text-xl font-bold">Iniciar sesión</h3>
+                <button onClick={() => setLoginOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
               </div>
-              <p className="mt-1 text-sm text-neutral-600">Completá el formulario y te respondo al toque.</p>
-              <form className="mt-4 grid gap-3" onSubmit={(e)=>{
-                e.preventDefault();
-                const data = Object.fromEntries(new FormData(e.currentTarget));
-                const text = encodeURIComponent(
-                  `Hola! Quiero *vender un pet*.\n\n`+
-                  `Nombre del pet: ${data.name || "-"}\n`+
-                  `Rareza: ${data.rarity || "-"}\n`+
-                  `Estado (fly/ride/neón): ${data.state || "-"}\n`+
-                  `Precio deseado: ${data.price || "-"} ${OWNER.currency}\n`+
-                  `Notas: ${data.notes || "-"}`
-                );
-                window.open(`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}?text=${text}`, "_blank");
-              }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Nombre del pet</label>
-                    <input name="name" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Ej. Shadow Dragon"/>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Rareza</label>
-                    <select name="rarity" className="mt-1 w-full rounded-xl border px-3 py-2">
-                      <option value="legendario">Legendario</option>
-                      <option value="ultra-raro">Ultra-raro</option>
-                      <option value="raro">Raro</option>
-                      <option value="común">Común</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Estado (fly/ride/neón)</label>
-                    <input name="state" className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Ej. fly + ride"/>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Precio deseado ({OWNER.currency})</label>
-                    <input name="price" type="number" min="0" className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Ej. 100000"/>
-                  </div>
+              <form className="mt-4 grid gap-3" onSubmit={handleLogin}>
+                <div>
+                  <label className="text-sm font-medium">Email</label>
+                  <input name="email" type="email" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="tu@correo.com" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Notas</label>
-                  <textarea name="notes" rows={4} className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="Detalles, combos, tiempos, etc."/>
+                  <label className="text-sm font-medium">Contraseña</label>
+                  <input name="password" type="password" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="••••••••" />
                 </div>
                 <div className="flex items-center justify-end gap-2 pt-2">
-                  <button type="button" onClick={()=>setSellOpen(false)} className="rounded-xl border px-4 py-2">Cancelar</button>
-                  <button type="submit" className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Enviar por WhatsApp</button>
+                  <button type="button" onClick={()=>setLoginOpen(false)} className="rounded-xl border px-4 py-2">Cancelar</button>
+                  <button type="submit" className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Entrar</button>
                 </div>
               </form>
+              <p className="mt-3 text-xs text-neutral-500">Solo vos tendrás las credenciales. Los visitantes pueden ver, pero no editar.</p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Modal Disclaimer */}
-      <AnimatePresence>
-        {disclaimerOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Descargo de responsabilidad</h3>
-                <button onClick={() => setDisclaimerOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
-              </div>
-              <div className="mt-2 text-sm text-neutral-700 space-y-3">
-                <p>Este es un fan-site independiente. No está afiliado ni patrocinado por los desarrolladores del juego.</p>
-                <p>La compra/venta de ítems de juego puede estar limitada por los Términos de Servicio del juego. Usá cuentas alternativas y evitá compartir datos sensibles. Todas las transacciones son finales.</p>
-                <p>Recomendamos documentar cada intercambio (capturas, IDs, fecha/hora) y usar métodos de pago con comprobante.</p>
-              </div>
-              <div className="flex justify-end pt-3">
-                <button onClick={() => setDisclaimerOpen(false)} className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Entendido</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Burbuja WhatsApp */}
       <a
         href={`https://wa.me/5491122880015?text=${encodeURIComponent("Hola! Quiero comprar o intercambiar un pet 🐾")}`}
         target="_blank"
