@@ -208,7 +208,11 @@ export default function App() {
           {filtered.map((item) => (
             <motion.article key={item.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group rounded-3xl border bg-white shadow-sm hover:shadow-md overflow-hidden">
               <div className="relative">
-                <img src={item.img} alt={item.name} className="h-48 w-full object-cover" />
+                <img
+  src={item.img}
+  alt={item.name}
+  className="h-48 w-full object-contain bg-neutral-100"
+  loading="lazy"/>
                 <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-white">{item.rarity}</div>
               </div>
               <div className="p-4">
