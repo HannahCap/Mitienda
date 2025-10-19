@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Search, ShoppingBag, Plus, X, ChevronDown, Info, Instagram, MessageCircle,
+  Search, ShoppingBag, Plus, X, ChevronDown, Info, MessageCircle,
   LogIn, LogOut, Trash2, Save
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
@@ -14,7 +14,6 @@ const OWNER = {
   brand: "Paws & Trades",
   tagline: "Compra, venta e intercambio de pets (fan-site, no oficial)",
   whatsapp: "+5491122880015",
-  instagram: "https://instagram.com/tu_instagram",
   location: "Buenos Aires, AR",
   currency: "ARS",
 };
