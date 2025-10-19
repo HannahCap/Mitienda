@@ -6,10 +6,12 @@ import {
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
+// ----- Supabase -----
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// ----- Datos del sitio -----
 const OWNER = {
   brand: "Paws & Trades",
   tagline: "Compra, venta e intercambio de pets (fan-site, no oficial)",
@@ -42,19 +44,21 @@ export default function App() {
   const [session, setSession] = useState(null);
   const isAuthed = Boolean(session);
 
+  // ----- Carga inicial -----
   useEffect(() => {
     const load = async () => {
       if (!supabase) {
+        // Modo demo (si no hay Supabase)
         setItems([
-          { id: "p1", name: "Shadow Dragon", rarity: "legendario", price: 350000, img: "https://placehold.co/600x400/png?text=Shadow+Dragon", stock: 1, tags: "montable,neón" },
-          { id: "p2", name: "Frost Fury", rarity: "legendario", price: 210000, img: "https://placehold.co/600x400/png?text=Frost+Fury", stock: 3, tags: "montable" },
-          { id: "p3", name: "Albino Monkey", rarity: "ultra-raro", price: 90000, img: "https://placehold.co/600x400/png?text=Albino+Monkey", stock: 2, tags: "fly,ride" },
-          { id: "p4", name: "Golden Penguin", rarity: "raro", price: 45000, img: "https://placehold.co/600x400/png?text=Golden+Penguin", stock: 5, tags: "colección" },
+          { id: "p1", name: "Shadow Dragon", rarity: "legendario", price: 350000, img: "https://placehold.co/600x600/png?text=Shadow+Dragon", stock: 1, tags: "montable,neón" },
+          { id: "p2", name: "Frost Fury", rarity: "legendario", price: 210000, img: "https://placehold.co/600x600/png?text=Frost+Fury", stock: 3, tags: "montable" },
+          { id: "p3", name: "Albino Monkey", rarity: "ultra-raro", price: 90000, img: "https://placehold.co/600x600/png?text=Albino+Monkey", stock: 2, tags: "fly,ride" },
+          { id: "p4", name: "Golden Penguin", rarity: "raro", price: 45000, img: "https://placehold.co/600x600/png?text=Golden+Penguin", stock: 5, tags: "colección" },
         ]);
         return;
       }
-      const { data } = await supabase.from("items").select("*").order("name");
-      setItems(data || []);
+      const { data, error } = await supabase.from("items").select("*").order("name");
+      if (!error) setItems(data || []);
     };
     load();
 
@@ -65,6 +69,7 @@ export default function App() {
     }
   }, []);
 
+  // ----- Filtros -----
   const filtered = useMemo(() => {
     let list = items.filter((i) => {
       const hay = (s) => (s || "").toLowerCase();
@@ -77,6 +82,7 @@ export default function App() {
     return list;
   }, [items, q, rarity, sort]);
 
+  // ----- WhatsApp -----
   const contactWhatsApp = (item) => {
     const message = encodeURIComponent(
       `Hola! Me interesa *${item?.name || "vender/comprar/intercambiar"}* en ${OWNER.brand}.\n` +
@@ -85,6 +91,7 @@ export default function App() {
     return `https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}?text=${message}`;
   };
 
+  // ----- CRUD -----
   const addItem = async (e) => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
@@ -111,6 +118,7 @@ export default function App() {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  // ----- Auth -----
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!supabase) return alert("Falta configurar Supabase (env vars en Vercel).");
@@ -123,6 +131,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900">
+      {/* Header */}
       <header className="relative overflow-hidden">
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-amber-400 to-violet-500"></div>
         <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-sky-400 to-fuchsia-500"></div>
@@ -153,7 +162,8 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {/* Filtros */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-8">
             <div className="col-span-1 md:col-span-1">
               <div className="flex items-center gap-2 rounded-2xl border bg-white px-4 py-3">
                 <Search size={18} />
@@ -182,6 +192,7 @@ export default function App() {
         </div>
       </header>
 
+      {/* Admin: Agregar */}
       {isAuthed && (
         <section className="mx-auto max-w-6xl px-4 mt-6 rounded-3xl border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold flex items-center gap-2"><Plus size={18}/> Agregar nuevo pet</h2>
@@ -192,7 +203,7 @@ export default function App() {
                 {RARITIES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
               <input name="price" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Precio (ARS)" />
-              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen" />
+              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen (cuadrada 600×600 webp/png/jpg)" />
               <input name="stock" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Stock" />
               <input name="tags" className="rounded-xl border px-3 py-2 md:col-span-3" placeholder="Tags (neón,fly,ride)" />
             </div>
@@ -203,18 +214,24 @@ export default function App() {
         </section>
       )}
 
+      {/* Listado */}
       <main className="mx-auto max-w-6xl px-4 pb-20">
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
             <motion.article key={item.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group rounded-3xl border bg-white shadow-sm hover:shadow-md overflow-hidden">
+              {/* Recuadro CUADRADO para la imagen */}
               <div className="relative">
-                <img
-  src={item.img}
-  alt={item.name}
-  className="h-48 w-full object-contain bg-neutral-100"
-  loading="lazy"/>
+                <div className="w-full aspect-square bg-neutral-100 flex items-center justify-center">
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
                 <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-white">{item.rarity}</div>
               </div>
+
               <div className="p-4">
                 <h3 className="text-lg font-semibold leading-tight">{item.name}</h3>
                 <div className="mt-1 text-sm text-neutral-500">Stock: {item.stock}</div>
@@ -239,6 +256,7 @@ export default function App() {
           ))}
         </div>
 
+        {/* Sección intercambio */}
         <section className="mt-14">
           <div className="rounded-3xl border bg-white p-6 md:p-8 shadow-sm">
             <h2 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag size={20}/> ¿Querés proponerme un intercambio o venderme un pet?</h2>
@@ -252,6 +270,7 @@ export default function App() {
         </section>
       </main>
 
+      {/* Footer */}
       <footer className="border-t bg-white">
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -264,6 +283,7 @@ export default function App() {
         </div>
       </footer>
 
+      {/* Modal Login */}
       <AnimatePresence>
         {loginOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
@@ -292,6 +312,29 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Modal Disclaimer */}
+      <AnimatePresence>
+        {disclaimerOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">Descargo de responsabilidad</h3>
+                <button onClick={() => setDisclaimerOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
+              </div>
+              <div className="mt-2 text-sm text-neutral-700 space-y-3">
+                <p>Este es un fan-site independiente. No está afiliado ni patrocinado por los desarrolladores del juego.</p>
+                <p>La compra/venta de ítems de juego puede estar limitada por los Términos de Servicio del juego. Evitá compartir datos sensibles. Todas las transacciones son finales.</p>
+                <p>Recomendamos documentar cada intercambio (capturas, IDs, fecha/hora) y usar métodos de pago con comprobante.</p>
+              </div>
+              <div className="flex justify-end pt-3">
+                <button onClick={() => setDisclaimerOpen(false)} className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Entendido</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Burbuja WhatsApp */}
       <a
         href={`https://wa.me/5491122880015?text=${encodeURIComponent("Hola! Quiero comprar o intercambiar un pet 🐾")}`}
         target="_blank"
