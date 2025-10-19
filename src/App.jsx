@@ -9,7 +9,10 @@ import { createClient } from "@supabase/supabase-js";
 // ----- Supabase -----
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
 // ----- Datos del sitio -----
 const OWNER = {
@@ -29,8 +32,11 @@ const RARITIES = [
 
 function formatMoney(n, currency = OWNER.currency) {
   const num = Number(n ?? 0);
-  try { return new Intl.NumberFormat("es-AR", { style: "currency", currency }).format(num); }
-  catch { return new Intl.NumberFormat("es-AR").format(num) + ` ${currency}`; }
+  try {
+    return new Intl.NumberFormat("es-AR", { style: "currency", currency }).format(num);
+  } catch {
+    return new Intl.NumberFormat("es-AR").format(num) + ` ${currency}`;
+  }
 }
 
 export default function App() {
@@ -47,7 +53,7 @@ export default function App() {
   useEffect(() => {
     const load = async () => {
       if (!supabase) {
-        // Modo demo (si no hay Supabase)
+        // Modo demo si no hay Supabase
         setItems([
           { id: "p1", name: "Shadow Dragon", rarity: "legendario", price: 350000, img: "https://placehold.co/600x600/png?text=Shadow+Dragon", stock: 1, tags: "montable,neón" },
           { id: "p2", name: "Frost Fury", rarity: "legendario", price: 210000, img: "https://placehold.co/600x600/png?text=Frost+Fury", stock: 3, tags: "montable" },
@@ -85,7 +91,7 @@ export default function App() {
   const contactWhatsApp = (item) => {
     const message = encodeURIComponent(
       `Hola! Me interesa *${item?.name || "vender/comprar/intercambiar"}* en ${OWNER.brand}.\n` +
-      (item ? `Vi que está a ${formatMoney(item.price)}. ¿Sigue disponible?` : "Quiero venderte o proponerte un intercambio.")
+        (item ? `Vi que está a ${formatMoney(item.price)}. ¿Sigue disponible?` : "Quiero venderte o proponerte un intercambio.")
     );
     return `https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}?text=${message}`;
   };
@@ -145,16 +151,26 @@ export default function App() {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <a href={`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}`} target="_blank" className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white">
+              <a
+                href={`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white"
+              >
                 <MessageCircle size={18} /> WhatsApp
               </a>
 
               {!isAuthed ? (
-                <button onClick={() => setLoginOpen(true)} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white">
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-900 hover:bg-neutral-800 text-white"
+                >
                   <LogIn size={18} /> Iniciar sesión
                 </button>
               ) : (
-                <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-200 hover:bg-neutral-300">
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-neutral-200 hover:bg-neutral-300"
+                >
                   <LogOut size={18} /> Salir
                 </button>
               )}
@@ -173,7 +189,11 @@ export default function App() {
               <div className="relative">
                 <select value={rarity} onChange={(e) => setRarity(e.target.value)} className="w-full appearance-none rounded-2xl border bg-white px-4 py-3 pr-9">
                   <option value="">Todas las rarezas</option>
-                  {RARITIES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  {RARITIES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" size={18} />
               </div>
@@ -194,20 +214,28 @@ export default function App() {
       {/* Agregar pet */}
       {isAuthed && (
         <section className="mx-auto max-w-6xl px-4 mt-6 rounded-3xl border bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold flex items-center gap-2"><Plus size={18}/> Agregar nuevo pet</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Plus size={18} /> Agregar nuevo pet
+          </h2>
           <form className="mt-4 grid gap-3" onSubmit={addItem}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <input name="name" required className="rounded-xl border px-3 py-2" placeholder="Nombre (ej. Shadow Dragon)" />
               <select name="rarity" className="rounded-xl border px-3 py-2">
-                {RARITIES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {RARITIES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
               </select>
               <input name="price" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Precio (ARS)" />
-              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen (cuadrada o rectangular)" />
+              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen (directa .jpg/.png/.webp)" />
               <input name="stock" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Stock" />
               <input name="tags" className="rounded-xl border px-3 py-2 md:col-span-3" placeholder="Tags (neón,fly,ride)" />
             </div>
             <div className="flex justify-end">
-              <button className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800"><Save size={16}/> Guardar</button>
+              <button className="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">
+                <Save size={16} /> Guardar
+              </button>
             </div>
           </form>
         </section>
@@ -217,58 +245,52 @@ export default function App() {
       <main className="mx-auto max-w-6xl px-4 pb-20">
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <motion.article key={item.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group rounded-3xl border bg-white shadow-sm hover:shadow-md overflow-hidden">
-              {/* Imagen cuadrada con relleno difuminado */}
+            <motion.article
+              key={item.id}
+              layout
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="group rounded-3xl border bg-white shadow-sm hover:shadow-md overflow-hidden"
+            >
+              {/* Imagen cuadrada con fondo difuminado + fallback */}
               <div className="relative">
                 <div
                   className="relative w-full aspect-square overflow-hidden rounded-2xl"
                   style={{
-                    backgroundImage: `url(${item.img})`,
+                    backgroundImage: `url(${item.img || ""})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}
                 >
+                  {/* Capa blur para rellenar bordes */}
                   <div
                     className="absolute inset-0"
                     style={{
-                      backgroundImage: `url(${item.img})`,
+                      backgroundImage: `url(${item.img || ""})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                       filter: "blur(12px)",
                       transform: "scale(1.1)",
                     }}
                   />
-                 {/* Imagen cuadrada con blur + fallback */}
-<div className="relative w-full aspect-square overflow-hidden rounded-2xl">
-  {/* Capa de fondo difuminada que rellena el cuadrado */}
-  <div
-    className="absolute inset-0"
-    style={{
-      backgroundImage: `url(${item.img || ""})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      filter: "blur(12px)",
-      transform: "scale(1.1)"
-    }}
-  />
-  {/* Si falla la imagen real, mostramos un placeholder */}
-  <img
-    src={item.img}
-    alt={item.name}
-    className="relative z-10 h-full w-full object-contain"
-    loading="lazy"
-    onError={(e) => {
-      e.currentTarget.onerror = null;
-      e.currentTarget.src = "https://placehold.co/600x600?text=Sin+imagen";
-      const bg = e.currentTarget.previousSibling;
-      if (bg && bg.style) {
-        bg.style.backgroundImage = "none";
-        bg.style.filter = "none";
-        bg.style.backgroundColor = "#f3f4f6";
-      }
-    }}
-  />
-</div>
+                  {/* Imagen real centrada sin recortes */}
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="relative z-10 h-full w-full object-contain"
+                    loading="lazy"
+                    draggable={false}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "https://placehold.co/600x600?text=Sin+imagen";
+                      const bg = e.currentTarget.previousSibling;
+                      if (bg && bg.style) {
+                        bg.style.backgroundImage = "none";
+                        bg.style.filter = "none";
+                        bg.style.backgroundColor = "#f3f4f6";
+                      }
+                    }}
+                  />
                 </div>
                 <div className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs text-white">{item.rarity}</div>
               </div>
@@ -278,17 +300,29 @@ export default function App() {
                 <div className="mt-1 text-sm text-neutral-500">Stock: {item.stock}</div>
                 <div className="mt-2 text-xl font-bold">{formatMoney(item.price)}</div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
-                  {(item.tags || "").split(",").filter(Boolean).map((t) => (
-                    <span key={t} className="rounded-full border px-2 py-1">#{t.trim()}</span>
-                  ))}
+                  {(item.tags || "")
+                    .split(",")
+                    .filter(Boolean)
+                    .map((t) => (
+                      <span key={t} className="rounded-full border px-2 py-1">
+                        #{t.trim()}
+                      </span>
+                    ))}
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-2">
-                  <a href={contactWhatsApp(item)} target="_blank" className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white">
+                  <a
+                    href={contactWhatsApp(item)}
+                    target="_blank"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
                     <MessageCircle size={16} /> Contactar por WhatsApp
                   </a>
                   {isAuthed && (
-                    <button onClick={() => deleteItem(item.id)} className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 border bg-white hover:bg-neutral-50 text-red-600">
-                      <Trash2 size={16}/> Eliminar
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 border bg-white hover:bg-neutral-50 text-red-600"
+                    >
+                      <Trash2 size={16} /> Eliminar
                     </button>
                   )}
                 </div>
@@ -300,12 +334,20 @@ export default function App() {
         {/* Sección intercambio */}
         <section className="mt-14">
           <div className="rounded-3xl border bg-white p-6 md:p-8 shadow-sm">
-            <h2 className="text-2xl font-bold flex items-center gap-2"><ShoppingBag size={20}/> ¿Querés proponerme un intercambio o venderme un pet?</h2>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <ShoppingBag size={20} /> ¿Querés proponerme un intercambio o venderme un pet?
+            </h2>
             <p className="mt-2 text-neutral-600 max-w-3xl">
               Si querés ofrecerme tus pets o proponer un intercambio, escribime por WhatsApp. Podemos coordinar intercambios, combos o ventas directas de forma rápida y segura.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <a href={`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}`} target="_blank" className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white"><MessageCircle size={18}/> WhatsApp</a>
+              <a
+                href={`https://wa.me/${OWNER.whatsapp.replace(/\D/g, "")}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white"
+              >
+                <MessageCircle size={18} /> WhatsApp
+              </a>
             </div>
           </div>
         </section>
@@ -318,4 +360,103 @@ export default function App() {
             <div>
               <div className="font-semibold">{OWNER.brand}</div>
               <div className="text-sm text-neutral-500">{OWNER.tagline}</div>
-              <div className="mt-2 text-xs text-neutral
+              <div className="mt-2 text-xs text-neutral-400">
+                Fan-site no afiliado. Los nombres, marcas y assets pertenecen a sus respectivos dueños.
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Modal Login */}
+      <AnimatePresence>
+        {loginOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">Iniciar sesión</h3>
+                <button onClick={() => setLoginOpen(false)} className="rounded-full p-2 hover:bg-neutral-100">
+                  <X size={18} />
+                </button>
+              </div>
+              <form className="mt-4 grid gap-3" onSubmit={handleLogin}>
+                <div>
+                  <label className="text-sm font-medium">Email</label>
+                  <input name="email" type="email" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="tu@correo.com" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Contraseña</label>
+                  <input name="password" type="password" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="••••••••" />
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button type="button" onClick={() => setLoginOpen(false)} className="rounded-xl border px-4 py-2">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">
+                    Entrar
+                  </button>
+                </div>
+              </form>
+              <p className="mt-3 text-xs text-neutral-500">Solo vos tendrás las credenciales. Los visitantes pueden ver, pero no editar.</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Disclaimer */}
+      <AnimatePresence>
+        {disclaimerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">Descargo de responsabilidad</h3>
+                <button onClick={() => setDisclaimerOpen(false)} className="rounded-full p-2 hover:bg-neutral-100">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="mt-2 text-sm text-neutral-700 space-y-3">
+                <p>Este es un fan-site independiente. No está afiliado ni patrocinado por los desarrolladores del juego.</p>
+                <p>La compra/venta de ítems de juego puede estar limitada por los Términos de Servicio del juego. Evitá compartir datos sensibles. Todas las transacciones son finales.</p>
+                <p>Recomendamos documentar cada intercambio (capturas, IDs, fecha/hora) y usar métodos de pago con comprobante.</p>
+              </div>
+              <div className="flex justify-end pt-3">
+                <button onClick={() => setDisclaimerOpen(false)} className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Burbuja WhatsApp */}
+      <a
+        href={`https://wa.me/5491122880015?text=${encodeURIComponent("Hola! Quiero comprar o intercambiar un pet 🐾")}`}
+        target="_blank"
+        className="fixed bottom-5 right-5 z-50 rounded-full px-4 py-3 shadow-lg bg-emerald-500 text-white font-medium"
+      >
+        WhatsApp
+      </a>
+    </div>
+  );
+}
