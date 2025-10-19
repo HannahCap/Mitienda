@@ -38,7 +38,6 @@ export default function App() {
   const [q, setQ] = useState("");
   const [rarity, setRarity] = useState("");
   const [sort, setSort] = useState("recent");
-  const [sellOpen, setSellOpen] = useState(false);
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [session, setSession] = useState(null);
@@ -192,7 +191,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Admin: Agregar */}
+      {/* Agregar pet */}
       {isAuthed && (
         <section className="mx-auto max-w-6xl px-4 mt-6 rounded-3xl border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold flex items-center gap-2"><Plus size={18}/> Agregar nuevo pet</h2>
@@ -203,7 +202,7 @@ export default function App() {
                 {RARITIES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
               <input name="price" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Precio (ARS)" />
-              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen (cuadrada 600×600 webp/png/jpg)" />
+              <input name="img" className="rounded-xl border px-3 py-2 md:col-span-2" placeholder="URL de imagen (cuadrada o rectangular)" />
               <input name="stock" type="number" min="0" className="rounded-xl border px-3 py-2" placeholder="Stock" />
               <input name="tags" className="rounded-xl border px-3 py-2 md:col-span-3" placeholder="Tags (neón,fly,ride)" />
             </div>
@@ -219,13 +218,30 @@ export default function App() {
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
             <motion.article key={item.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="group rounded-3xl border bg-white shadow-sm hover:shadow-md overflow-hidden">
-              {/* Recuadro CUADRADO para la imagen */}
+              {/* Imagen cuadrada con relleno difuminado */}
               <div className="relative">
-                <div className="w-full aspect-square bg-neutral-100 flex items-center justify-center">
+                <div
+                  className="relative w-full aspect-square overflow-hidden rounded-2xl"
+                  style={{
+                    backgroundImage: `url(${item.img})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${item.img})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: "blur(12px)",
+                      transform: "scale(1.1)",
+                    }}
+                  />
                   <img
                     src={item.img}
                     alt={item.name}
-                    className="max-h-full max-w-full object-contain"
+                    className="relative z-10 h-full w-full object-contain"
                     loading="lazy"
                   />
                 </div>
@@ -277,71 +293,4 @@ export default function App() {
             <div>
               <div className="font-semibold">{OWNER.brand}</div>
               <div className="text-sm text-neutral-500">{OWNER.tagline}</div>
-              <div className="mt-2 text-xs text-neutral-400">Fan-site no afiliado. Los nombres, marcas y assets pertenecen a sus respectivos dueños.</div>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Modal Login */}
-      <AnimatePresence>
-        {loginOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Iniciar sesión</h3>
-                <button onClick={() => setLoginOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
-              </div>
-              <form className="mt-4 grid gap-3" onSubmit={handleLogin}>
-                <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <input name="email" type="email" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="tu@correo.com" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Contraseña</label>
-                  <input name="password" type="password" required className="mt-1 w-full rounded-xl border px-3 py-2" placeholder="••••••••" />
-                </div>
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button type="button" onClick={()=>setLoginOpen(false)} className="rounded-xl border px-4 py-2">Cancelar</button>
-                  <button type="submit" className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Entrar</button>
-                </div>
-              </form>
-              <p className="mt-3 text-xs text-neutral-500">Solo vos tendrás las credenciales. Los visitantes pueden ver, pero no editar.</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal Disclaimer */}
-      <AnimatePresence>
-        {disclaimerOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 z-50 grid place-items-center p-4">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Descargo de responsabilidad</h3>
-                <button onClick={() => setDisclaimerOpen(false)} className="rounded-full p-2 hover:bg-neutral-100"><X size={18}/></button>
-              </div>
-              <div className="mt-2 text-sm text-neutral-700 space-y-3">
-                <p>Este es un fan-site independiente. No está afiliado ni patrocinado por los desarrolladores del juego.</p>
-                <p>La compra/venta de ítems de juego puede estar limitada por los Términos de Servicio del juego. Evitá compartir datos sensibles. Todas las transacciones son finales.</p>
-                <p>Recomendamos documentar cada intercambio (capturas, IDs, fecha/hora) y usar métodos de pago con comprobante.</p>
-              </div>
-              <div className="flex justify-end pt-3">
-                <button onClick={() => setDisclaimerOpen(false)} className="rounded-xl bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800">Entendido</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Burbuja WhatsApp */}
-      <a
-        href={`https://wa.me/5491122880015?text=${encodeURIComponent("Hola! Quiero comprar o intercambiar un pet 🐾")}`}
-        target="_blank"
-        className="fixed bottom-5 right-5 z-50 rounded-full px-4 py-3 shadow-lg bg-emerald-500 text-white font-medium"
-      >
-        WhatsApp
-      </a>
-    </div>
-  );
-}
+              <div className="mt-2 text-xs text-neutral
